@@ -328,6 +328,7 @@ impl ValidationError {
             &SerMode::Json,
             true,
             false,
+            None,
             false,
             true,
             None,

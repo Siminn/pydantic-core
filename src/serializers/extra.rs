@@ -4,7 +4,7 @@ use std::fmt;
 use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyBool, PyString};
+use pyo3::types::{PyBool, PyString, PyType};
 
 use serde::ser::Error;
 
@@ -83,6 +83,7 @@ impl SerializationState {
         mode: &'py SerMode,
         by_alias: bool,
         exclude_none: bool,
+        exclude_type: Option<&'py Bound<'_, PyType>>,
         round_trip: bool,
         serialize_unknown: bool,
         fallback: Option<&'py Bound<'_, PyAny>>,
@@ -97,6 +98,7 @@ impl SerializationState {
             false,
             false,
             exclude_none,
+            exclude_type,
             round_trip,
             &self.config,
             &self.rec_guard,
@@ -123,6 +125,7 @@ pub(crate) struct Extra<'a> {
     pub exclude_unset: bool,
     pub exclude_defaults: bool,
     pub exclude_none: bool,
+    pub exclude_type: Option<&'a Bound<'a, PyType>>,
     pub round_trip: bool,
     pub config: &'a SerializationConfig,
     pub rec_guard: &'a SerRecursionState,
@@ -149,6 +152,7 @@ impl<'a> Extra<'a> {
         exclude_unset: bool,
         exclude_defaults: bool,
         exclude_none: bool,
+        exclude_type: Option<&'a Bound<'a, PyType>>,
         round_trip: bool,
         config: &'a SerializationConfig,
         rec_guard: &'a SerRecursionState,
@@ -165,6 +169,7 @@ impl<'a> Extra<'a> {
             exclude_unset,
             exclude_defaults,
             exclude_none,
+            exclude_type,
             round_trip,
             config,
             rec_guard,
@@ -225,6 +230,7 @@ pub(crate) struct ExtraOwned {
     exclude_unset: bool,
     exclude_defaults: bool,
     exclude_none: bool,
+    exclude_type: Option<Py<PyType>>,
     round_trip: bool,
     config: SerializationConfig,
     rec_guard: SerRecursionState,
@@ -246,6 +252,7 @@ impl ExtraOwned {
             exclude_unset: extra.exclude_unset,
             exclude_defaults: extra.exclude_defaults,
             exclude_none: extra.exclude_none,
+            exclude_type: extra.exclude_type.map(|model| model.clone().into()),
             round_trip: extra.round_trip,
             config: extra.config.clone(),
             rec_guard: extra.rec_guard.clone(),
@@ -268,6 +275,7 @@ impl ExtraOwned {
             exclude_unset: self.exclude_unset,
             exclude_defaults: self.exclude_defaults,
             exclude_none: self.exclude_none,
+            exclude_type: self.exclude_type.as_ref().map(|m| m.bind(py)),
             round_trip: self.round_trip,
             config: &self.config,
             rec_guard: &self.rec_guard,

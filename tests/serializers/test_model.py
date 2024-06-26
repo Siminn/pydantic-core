@@ -241,6 +241,53 @@ def test_model_wrong_warn():
         assert s.to_python({'foo': 1, 'bar': b'more'}) == {'foo': 1, 'bar': b'more'}
 
 
+def test_exclude_type():
+    class UnsetType:
+        def __repr__(self):
+            return 'u'
+
+    s = SchemaSerializer(
+        core_schema.model_schema(
+            BasicModel,
+            core_schema.model_fields_schema(
+                {
+                    'foo': core_schema.model_field(core_schema.is_instance_schema(UnsetType)),
+                    'zoom': core_schema.model_field(core_schema.nullable_schema(core_schema.int_schema())),
+                    'bar': core_schema.model_field(core_schema.bytes_schema()),
+                },
+                extra_behavior='allow',
+            ),
+            extra_behavior='allow',
+        )
+    )
+    u = UnsetType()
+    assert s.to_python(BasicModel(foo=1, bar=b'more', __pydantic_extra__={})) == {'foo': 1, 'bar': b'more'}
+    assert s.to_python(BasicModel(foo=u, bar=b'more', __pydantic_extra__={})) == {'foo': u, 'bar': b'more'}
+    assert s.to_python(
+        BasicModel(foo=u, bar=b'more', __pydantic_extra__={'x': u, 'p': 'q'}), exclude_type=UnsetType
+    ) == {'bar': b'more', 'p': 'q'}
+
+    assert s.to_python(BasicModel(foo=u, bar=b'more', __pydantic_extra__={}), mode='json', fallback=str) == {
+        'foo': 'u',
+        'bar': 'more',
+    }
+    assert s.to_python(
+        BasicModel(foo=u, bar=b'more', __pydantic_extra__={'x': u, 'p': 'q'}),
+        mode='json',
+        exclude_type=UnsetType,
+        fallback=str,
+    ) == {'bar': 'more', 'p': 'q'}
+
+    assert s.to_json(BasicModel(foo=1, bar=b'more', __pydantic_extra__={}), fallback=str) == b'{"foo":1,"bar":"more"}'
+    assert s.to_json(BasicModel(foo=u, bar=b'more', __pydantic_extra__={}), fallback=str) == b'{"foo":"u","bar":"more"}'
+    assert (
+        s.to_json(
+            BasicModel(foo=u, bar=b'more', __pydantic_extra__={'x': u, 'p': 'q'}), exclude_type=UnsetType, fallback=str
+        )
+        == b'{"bar":"more","p":"q"}'
+    )
+
+
 def test_exclude_none():
     s = SchemaSerializer(
         core_schema.model_schema(

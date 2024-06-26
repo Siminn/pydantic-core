@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PyDict};
+use pyo3::types::{PyBytes, PyDict, PyType};
 use pyo3::{PyTraverseError, PyVisit};
 
 use crate::definitions::{Definitions, DefinitionsBuilder};
@@ -57,6 +57,7 @@ impl SchemaSerializer {
         exclude_unset: bool,
         exclude_defaults: bool,
         exclude_none: bool,
+        exclude_type: Option<&'a Bound<'a, PyType>>,
         round_trip: bool,
         rec_guard: &'a SerRecursionState,
         serialize_unknown: bool,
@@ -72,6 +73,7 @@ impl SchemaSerializer {
             exclude_unset,
             exclude_defaults,
             exclude_none,
+            exclude_type,
             round_trip,
             &self.config,
             rec_guard,
@@ -105,7 +107,7 @@ impl SchemaSerializer {
 
     #[allow(clippy::too_many_arguments)]
     #[pyo3(signature = (value, *, mode = None, include = None, exclude = None, by_alias = true,
-        exclude_unset = false, exclude_defaults = false, exclude_none = false, round_trip = false, warnings = WarningsArg::Bool(true),
+        exclude_unset = false, exclude_defaults = false, exclude_none = false, exclude_type = None, round_trip = false, warnings = WarningsArg::Bool(true),
         fallback = None, serialize_as_any = false, context = None))]
     pub fn to_python(
         &self,
@@ -118,6 +120,7 @@ impl SchemaSerializer {
         exclude_unset: bool,
         exclude_defaults: bool,
         exclude_none: bool,
+        exclude_type: Option<&Bound<'_, PyType>>,
         round_trip: bool,
         warnings: WarningsArg,
         fallback: Option<&Bound<'_, PyAny>>,
@@ -140,6 +143,7 @@ impl SchemaSerializer {
             exclude_unset,
             exclude_defaults,
             exclude_none,
+            exclude_type,
             round_trip,
             &rec_guard,
             false,
@@ -154,7 +158,7 @@ impl SchemaSerializer {
 
     #[allow(clippy::too_many_arguments)]
     #[pyo3(signature = (value, *, indent = None, include = None, exclude = None, by_alias = true,
-        exclude_unset = false, exclude_defaults = false, exclude_none = false, round_trip = false, warnings = WarningsArg::Bool(true),
+        exclude_unset = false, exclude_defaults = false, exclude_none = false, exclude_type = None, round_trip = false, warnings = WarningsArg::Bool(true),
         fallback = None, serialize_as_any = false, context = None))]
     pub fn to_json(
         &self,
@@ -167,6 +171,7 @@ impl SchemaSerializer {
         exclude_unset: bool,
         exclude_defaults: bool,
         exclude_none: bool,
+        exclude_type: Option<&Bound<'_, PyType>>,
         round_trip: bool,
         warnings: WarningsArg,
         fallback: Option<&Bound<'_, PyAny>>,
@@ -188,6 +193,7 @@ impl SchemaSerializer {
             exclude_unset,
             exclude_defaults,
             exclude_none,
+            exclude_type,
             round_trip,
             &rec_guard,
             false,
@@ -241,7 +247,7 @@ impl SchemaSerializer {
 #[allow(clippy::too_many_arguments)]
 #[pyfunction]
 #[pyo3(signature = (value, *, indent = None, include = None, exclude = None, by_alias = true,
-    exclude_none = false, round_trip = false, timedelta_mode = "iso8601", bytes_mode = "utf8",
+    exclude_none = false, exclude_type=None, round_trip = false, timedelta_mode = "iso8601", bytes_mode = "utf8",
     inf_nan_mode = "constants", serialize_unknown = false, fallback = None, serialize_as_any = false,
     context = None))]
 pub fn to_json(
@@ -252,6 +258,7 @@ pub fn to_json(
     exclude: Option<&Bound<'_, PyAny>>,
     by_alias: bool,
     exclude_none: bool,
+    exclude_type: Option<&Bound<'_, PyType>>,
     round_trip: bool,
     timedelta_mode: &str,
     bytes_mode: &str,
@@ -268,6 +275,7 @@ pub fn to_json(
         &SerMode::Json,
         by_alias,
         exclude_none,
+        exclude_type,
         round_trip,
         serialize_unknown,
         fallback,
@@ -283,7 +291,7 @@ pub fn to_json(
 
 #[allow(clippy::too_many_arguments)]
 #[pyfunction]
-#[pyo3(signature = (value, *, include = None, exclude = None, by_alias = true, exclude_none = false, round_trip = false,
+#[pyo3(signature = (value, *, include = None, exclude = None, by_alias = true, exclude_none = false, exclude_type = None, round_trip = false,
     timedelta_mode = "iso8601", bytes_mode = "utf8", inf_nan_mode = "constants", serialize_unknown = false, fallback = None,
     serialize_as_any = false, context = None))]
 pub fn to_jsonable_python(
@@ -293,6 +301,7 @@ pub fn to_jsonable_python(
     exclude: Option<&Bound<'_, PyAny>>,
     by_alias: bool,
     exclude_none: bool,
+    exclude_type: Option<&Bound<'_, PyType>>,
     round_trip: bool,
     timedelta_mode: &str,
     bytes_mode: &str,
@@ -309,6 +318,7 @@ pub fn to_jsonable_python(
         &SerMode::Json,
         by_alias,
         exclude_none,
+        exclude_type,
         round_trip,
         serialize_unknown,
         fallback,

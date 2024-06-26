@@ -2,7 +2,7 @@ import datetime
 from typing import Any, Callable, Generic, Literal, TypeVar, final
 
 from _typeshed import SupportsAllComparisons
-from typing_extensions import LiteralString, Self, TypeAlias
+from typing_extensions import LiteralString, Self, Type, TypeAlias
 
 from pydantic_core import ErrorDetails, ErrorTypeInfo, InitErrorDetails, MultiHostHost
 from pydantic_core.core_schema import CoreConfig, CoreSchema, ErrorType
@@ -261,6 +261,7 @@ class SchemaSerializer:
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        exclude_type: Type | None = None,
         round_trip: bool = False,
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         fallback: Callable[[Any], Any] | None = None,
@@ -307,6 +308,7 @@ class SchemaSerializer:
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        exclude_type: Type | None = None,
         round_trip: bool = False,
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         fallback: Callable[[Any], Any] | None = None,
@@ -350,6 +352,7 @@ def to_json(
     exclude: _IncEx = None,
     by_alias: bool = True,
     exclude_none: bool = False,
+    exclude_type: Type | None = None,
     round_trip: bool = False,
     timedelta_mode: Literal['iso8601', 'float'] = 'iso8601',
     bytes_mode: Literal['utf8', 'base64'] = 'utf8',
@@ -425,6 +428,7 @@ def to_jsonable_python(
     exclude: _IncEx = None,
     by_alias: bool = True,
     exclude_none: bool = False,
+    exclude_type: Type | None = None,
     round_trip: bool = False,
     timedelta_mode: Literal['iso8601', 'float'] = 'iso8601',
     bytes_mode: Literal['utf8', 'base64'] = 'utf8',

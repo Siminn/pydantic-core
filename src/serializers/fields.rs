@@ -168,6 +168,18 @@ impl GeneralFieldsSerializer {
                 }
                 continue;
             }
+            if extra.exclude_type.is_some()
+                && value.get_type().fully_qualified_name()?.to_string()
+                    == extra.exclude_type.unwrap().fully_qualified_name()?.to_string()
+            {
+                if let Some(field) = op_field {
+                    if field.required {
+                        used_req_fields += 1;
+                    }
+                }
+                continue;
+            }
+
             let field_extra = Extra {
                 field_name: Some(&key_str),
                 ..extra
@@ -206,7 +218,7 @@ impl GeneralFieldsSerializer {
 
         if extra.check.enabled()
             // If any of these are true we can't count fields
-            && !(extra.exclude_defaults || extra.exclude_unset || extra.exclude_none)
+            && !(extra.exclude_defaults || extra.exclude_unset || extra.exclude_none || extra.exclude_type.is_some())
             // Check for missing fields, we can't have extra fields here
             && self.required_fields > used_req_fields
         {
@@ -234,6 +246,22 @@ impl GeneralFieldsSerializer {
             if extra.exclude_none && value.is_none() {
                 continue;
             }
+            if extra.exclude_type.is_some()
+                && value
+                    .get_type()
+                    .fully_qualified_name()
+                    .map_err(py_err_se_err)?
+                    .to_string()
+                    == extra
+                        .exclude_type
+                        .unwrap()
+                        .fully_qualified_name()
+                        .map_err(py_err_se_err)?
+                        .to_string()
+            {
+                continue;
+            }
+
             let key_str = key_str(&key).map_err(py_err_se_err)?;
             let field_extra = Extra {
                 field_name: Some(&key_str),
@@ -354,6 +382,12 @@ impl TypeSerializer for GeneralFieldsSerializer {
                 if extra.exclude_none && value.is_none() {
                     continue;
                 }
+                if extra.exclude_type.is_some()
+                    && value.get_type().fully_qualified_name()?.to_string()
+                        == extra.exclude_type.unwrap().fully_qualified_name()?.to_string()
+                {
+                    continue;
+                }
                 if let Some((next_include, next_exclude)) = self.filter.key_filter(&key, include, exclude)? {
                     let value = match &self.extra_serializer {
                         Some(serializer) => {
@@ -426,6 +460,21 @@ impl TypeSerializer for GeneralFieldsSerializer {
         if let Some(extra_dict) = extra_dict {
             for (key, value) in extra_dict {
                 if extra.exclude_none && value.is_none() {
+                    continue;
+                }
+                if extra.exclude_type.is_some()
+                    && value
+                        .get_type()
+                        .fully_qualified_name()
+                        .map_err(py_err_se_err)?
+                        .to_string()
+                        == extra
+                            .exclude_type
+                            .unwrap()
+                            .fully_qualified_name()
+                            .map_err(py_err_se_err)?
+                            .to_string()
+                {
                     continue;
                 }
                 let filter = self.filter.key_filter(&key, include, exclude).map_err(py_err_se_err)?;
